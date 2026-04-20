@@ -1,5 +1,8 @@
 # 🎮 JXR to PNG Converter
 
+Just a note before the rest of the description which was completely written by Google Gemini: this is basically just a GUI with some commodity features i really needed in order to share screenshots i made with NVIDIA Share with my friends on Discord, telegram and so on...
+The core of the project is - **[jxr_to_png](https://github.com/ledoge/jxr_to_png)** by **[ledoge](https://github.com/ledoge)**, which actually coded the program. Also thanks to **[hdrfix](https://github.com/bvibber/hdrfix)** by **[bvibber](https://github.com/bvibber)**.
+
 A desktop application that **automatically monitors** NVIDIA screenshot directories for HDR `.jxr` files and converts them to high-quality SDR `.png` format with professional tone mapping.
 
 Built with **PyQt5** — features a premium dark-mode UI, system tray integration, and multi-threaded parallel conversion.
