@@ -1,0 +1,24 @@
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# External tools (not distributed)
+hdrfix.exe
+hdrfix.zip
+hdrfix_dir/
+hdrfix_temp/
+jxr_to_png.exe
+
+# Temporary test files
+*.png
+!screenshots/*.png
+
+# IDE
+.vscode/
+.idea/
