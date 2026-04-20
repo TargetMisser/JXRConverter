@@ -15,6 +15,7 @@ Built with **PyQt5** — features a premium dark-mode UI, system tray integratio
 
 - **🔄 Automatic Monitoring** — Watches NVIDIA screenshot folders recursively via [Watchdog](https://github.com/gorakhargosh/watchdog), converting new `.jxr` files on the fly.
 - **🎨 Professional Tone Mapping** — Two-stage pipeline: HDR decode → Hable tone mapping with boosted saturation for vivid, social-media-ready colors.
+- **🤫 Customizable Background Mode** — Toggle between "Minimize to Tray" or "Close App" on window close.
 - **⚡ Parallel Conversion** — Multi-threaded processing (3 workers) for blazing fast batch conversions.
 - **🛡️ Smart File Detection** — Automatically detects and fixes fake `.jxr` files that are actually mislabeled PNGs (a known NVIDIA bug).
 - **🖥️ Premium Dark UI** — Glassmorphism-inspired interface with purple/blue accents, smooth animations, and a polished system tray experience.

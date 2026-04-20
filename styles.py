@@ -263,4 +263,30 @@ QMenu::separator {
     background-color: #2a2a4a;
     margin: 4px 8px;
 }
+
+/* ── CheckBox ── */
+QCheckBox {
+    spacing: 8px;
+    color: #e2e8f0;
+    font-size: 13px;
+    background: transparent;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    background-color: #12122a;
+    border: 1px solid #2a2a4a;
+    border-radius: 4px;
+}
+
+QCheckBox::indicator:hover {
+    border: 1px solid #3a3a6a;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #6366f1;
+    border: 1px solid #6366f1;
+    image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+}
 """

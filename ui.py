@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QLineEdit, QListWidget, QListWidgetItem, QFrame,
     QFileDialog, QSystemTrayIcon, QMenu, QAction, QApplication,
-    QSizePolicy, QGraphicsOpacityEffect, QMessageBox, QSpacerItem
+    QSizePolicy, QGraphicsOpacityEffect, QMessageBox, QSpacerItem, QCheckBox
 )
 from PyQt5.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, pyqtSlot
@@ -51,6 +51,7 @@ DEFAULT_CONFIG = {
     "jxr_exe_path": os.path.join(get_app_dir(), "hdrfix.exe"),
     "start_minimized": False,
     "auto_start_monitoring": True,
+    "minimize_to_tray": True,
 }
 
 
@@ -181,11 +182,15 @@ class MainWindow(QMainWindow):
         exe_row.addWidget(self.exe_input)
 
         exe_browse = QPushButton("📁")
-        exe_browse.setObjectName("browseBtn")
-        exe_browse.setToolTip("Sfoglia...")
         exe_browse.clicked.connect(self._browse_exe)
         exe_row.addWidget(exe_browse)
         config_layout.addLayout(exe_row)
+
+        # Minimize to tray toggle
+        self.tray_checkbox = QCheckBox("Riduci a icona nella Tray invece di chiudere")
+        self.tray_checkbox.setChecked(self.config.get("minimize_to_tray", True))
+        self.tray_checkbox.setCursor(Qt.PointingHandCursor)
+        config_layout.addWidget(self.tray_checkbox)
 
         main_layout.addWidget(config_card)
 
@@ -327,6 +332,7 @@ class MainWindow(QMainWindow):
         """Connect internal signals."""
         self.watch_input.textChanged.connect(self._on_config_changed)
         self.exe_input.textChanged.connect(self._on_config_changed)
+        self.tray_checkbox.stateChanged.connect(self._on_config_changed)
 
     # ── Monitoring Control ──
 
@@ -536,6 +542,7 @@ class MainWindow(QMainWindow):
         """Save config when paths change."""
         self.config["watch_path"] = self.watch_input.text().strip()
         self.config["jxr_exe_path"] = self.exe_input.text().strip()
+        self.config["minimize_to_tray"] = self.tray_checkbox.isChecked()
         save_config(self.config)
 
     # ── Tray ──
@@ -558,11 +565,15 @@ class MainWindow(QMainWindow):
     # ── Window Events ──
 
     def closeEvent(self, event):
-        """Minimize to tray instead of closing."""
-        event.ignore()
-        self.hide()
-        self.tray_icon.showMessage(
-            "JXR → PNG Converter",
-            "L'app continua in background nella system tray.",
-            QSystemTrayIcon.Information, 2000
-        )
+        """Handle window close event."""
+        if self.config.get("minimize_to_tray", True):
+            event.ignore()
+            self.hide()
+            self.tray_icon.showMessage(
+                "JXR → PNG Converter",
+                "L'app continua in background nella system tray.",
+                QSystemTrayIcon.Information, 2000
+            )
+        else:
+            self._quit_app()
+            event.accept()
