@@ -82,7 +82,7 @@ You need to place these executables in the project root before building:
 | Tool | Source | Purpose |
 |------|--------|---------|
 | `jxr_to_png.exe` | [ledoge/jxr_to_png](https://github.com/ledoge/jxr_to_png) | Decodes JPEG XR HDR files to PNG |
-| `hdrfix.exe` | [ledoge/hdrfix](https://github.com/ledoge/hdrfix) | Applies tone mapping (HDR → SDR) |
+| `hdrfix.exe` | [bvibber/hdrfix](https://github.com/bvibber/hdrfix) | Applies tone mapping (HDR → SDR) |
 
 ---
 
@@ -116,10 +116,10 @@ JXRConverter/
 
 ### External Tools
 
-This project would not be possible without these excellent open-source tools by **[ledoge](https://github.com/ledoge)**:
+This project would not be possible without these excellent open-source tools:
 
-- **[jxr_to_png](https://github.com/ledoge/jxr_to_png)** — JPEG XR to PNG decoder with HDR metadata support. Used as the first stage of the conversion pipeline.
-- **[hdrfix](https://github.com/ledoge/hdrfix)** — HDR to SDR tone mapping tool with multiple algorithms (Hable, ACES, Reinhard). Used as the second stage for professional-grade color conversion.
+- **[jxr_to_png](https://github.com/ledoge/jxr_to_png)** by **[ledoge](https://github.com/ledoge)** — JPEG XR to PNG decoder with HDR metadata support. Used as the first stage of the conversion pipeline.
+- **[hdrfix](https://github.com/bvibber/hdrfix)** by **[bvibber](https://github.com/bvibber)** (Brion Vibber) — HDR to SDR tone mapping tool with multiple algorithms (Hable, ACES, Reinhard). Used as the second stage for professional-grade color conversion.
 
 ### Libraries
 
