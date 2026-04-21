@@ -177,6 +177,11 @@ Note: The external tools (`jxr_to_png.exe`, `hdrfix.exe`) are **not included** i
 
 ## 📋 Changelog
 
+### v1.3 — UI Redesign (Premium Glassmorphism)
+- Complete UI overhaul using The Midnight Luminary design system
+- New neon purple and electric blue accent colors
+- Fully adopted dark glassmorphism effects for cards and console
+
 ### v1.2 — Multi-Language Support
 - Added internationalization (i18n) with support for 10 languages
 - Auto-detects system language on first launch
