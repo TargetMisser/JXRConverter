@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: JXRConverter
+Version: 1.4
+Summary: JXR to PNG Auto-Converter
+License-File: LICENSE
+Dynamic: license-file
+Dynamic: summary

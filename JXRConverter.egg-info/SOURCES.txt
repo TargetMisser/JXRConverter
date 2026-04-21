@@ -1,0 +1,7 @@
+LICENSE
+README.md
+setup.py
+JXRConverter.egg-info/PKG-INFO
+JXRConverter.egg-info/SOURCES.txt
+JXRConverter.egg-info/dependency_links.txt
+JXRConverter.egg-info/top_level.txt

@@ -1,0 +1,61 @@
+name: Build MSI Release
+
+on:
+  release:
+    types: [created]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install cx_Freeze
+
+      - name: Download External Tools (if missing)
+        # Assuming you will commit jxr_to_png.exe and hdrfix.exe, otherwise we try to download them here.
+        # If they aren't checked into the repository, you'll need them for the build.
+        run: |
+          if (!(Test-Path "hdrfix.exe")) {
+            Write-Host "hdrfix.exe not found. Downloading..."
+            Invoke-WebRequest -Uri "https://github.com/bvibber/hdrfix/releases/latest/download/hdrfix.exe" -OutFile "hdrfix.exe" -ErrorAction SilentlyContinue
+          }
+          if (!(Test-Path "jxr_to_png.exe")) {
+            Write-Host "jxr_to_png.exe not found. Downloading..."
+            Invoke-WebRequest -Uri "https://github.com/ledoge/jxr_to_png/releases/latest/download/jxr_to_png.exe" -OutFile "jxr_to_png.exe" -ErrorAction SilentlyContinue
+          }
+        shell: powershell
+
+      - name: Build MSI with cx_Freeze
+        run: python setup.py bdist_msi
+
+      - name: Locate Generated MSI
+        id: locate_msi
+        run: |
+          $msiPath = Get-ChildItem -Path dist/*.msi | Select-Object -ExpandProperty FullName -First 1
+          $fileName = [System.IO.Path]::GetFileName($msiPath)
+          echo "msi_path=$msiPath" >> $env:GITHUB_ENV
+          echo "msi_name=$fileName" >> $env:GITHUB_ENV
+        shell: powershell
+
+      - name: Upload MSI Release Asset
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ env.msi_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

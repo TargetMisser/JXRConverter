@@ -172,7 +172,7 @@ class MainWindow(QMainWindow):
 
         # Watch folder
         self.watch_label = QLabel(t("watch_folder_label"))
-        self.watch_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
+        self.watch_label.setStyleSheet("color: #8E9195; font-size: 12px; font-weight: 600;")
         config_layout.addWidget(self.watch_label)
 
         watch_row = QHBoxLayout()
@@ -189,7 +189,7 @@ class MainWindow(QMainWindow):
 
         # hdrfix.exe path
         self.exe_label = QLabel(t("exe_path_label"))
-        self.exe_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
+        self.exe_label.setStyleSheet("color: #8E9195; font-size: 12px; font-weight: 600;")
         config_layout.addWidget(self.exe_label)
 
         exe_row = QHBoxLayout()
@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
         # ── Language selector ──
         lang_row = QHBoxLayout()
         self.lang_label = QLabel(t("language_label"))
-        self.lang_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
+        self.lang_label.setStyleSheet("color: #8E9195; font-size: 12px; font-weight: 600;")
         lang_row.addWidget(self.lang_label)
 
         self.lang_combo = QComboBox()
@@ -277,7 +277,7 @@ class MainWindow(QMainWindow):
         # Separator
         sep1 = QFrame()
         sep1.setFixedWidth(1)
-        sep1.setStyleSheet("background-color: #2a2a4a;")
+        sep1.setStyleSheet("background-color: #2A2F3A;")
         stats_layout.addWidget(sep1)
 
         # Errors count
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
         # Separator
         sep2 = QFrame()
         sep2.setFixedWidth(1)
-        sep2.setStyleSheet("background-color: #2a2a4a;")
+        sep2.setStyleSheet("background-color: #2A2F3A;")
         stats_layout.addWidget(sep2)
 
         # Last file
@@ -304,7 +304,7 @@ class MainWindow(QMainWindow):
         last_col.setAlignment(Qt.AlignCenter)
         self.stat_last_file = QLabel("—")
         self.stat_last_file.setObjectName("statValue")
-        self.stat_last_file.setStyleSheet("font-size: 14px; color: #a5b4fc;")
+        self.stat_last_file.setStyleSheet("font-size: 15px; color: #2B6CEE;")
         self.stat_last_file.setAlignment(Qt.AlignCenter)
         self.stat_last_file.setWordWrap(True)
         last_col.addWidget(self.stat_last_file)
@@ -627,15 +627,15 @@ class MainWindow(QMainWindow):
         item = QListWidgetItem(f"[{timestamp}]  {message}")
 
         if error:
-            item.setForeground(QColor("#f87171"))
+            item.setForeground(QColor("#ba1a1a"))
         elif "✅" in message:
             item.setForeground(QColor("#4ade80"))
         elif "⏳" in message:
             item.setForeground(QColor("#fbbf24"))
         elif "ℹ️" in message:
-            item.setForeground(QColor("#60a5fa"))
+            item.setForeground(QColor("#2B6CEE"))
         else:
-            item.setForeground(QColor("#e2e8f0"))
+            item.setForeground(QColor("#ffffff"))
 
         self.log_list.insertItem(0, item)
 

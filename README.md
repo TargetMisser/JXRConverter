@@ -84,20 +84,19 @@ pip install -r requirements.txt
 python main.py
 ```
 
-### Build Standalone Executable
+### Build MSI Installer
 
-The included PowerShell script automates the full build and install process:
+You can build an MSI installer natively using `cx_Freeze`:
 
 ```powershell
-# Run as Administrator
-powershell -ExecutionPolicy Bypass -File build_and_install.ps1
+pip install cx_Freeze
+python setup.py bdist_msi
 ```
 
-This will:
-1. Compile the app with PyInstaller
-2. Bundle `jxr_to_png.exe` and `hdrfix.exe`
-3. Install to `C:\Program Files\JXRConverter\`
-4. Create a Desktop shortcut
+This will create an standard Windows `.msi` package in the `dist/` directory that handles:
+1. Installing the app to `C:\Program Files\JXRConverter\`
+2. Creating all necessary shortcuts
+3. Registering uninstallation entries
 
 ### External Tools Required
 
@@ -176,6 +175,11 @@ Note: The external tools (`jxr_to_png.exe`, `hdrfix.exe`) are **not included** i
 ---
 
 ## 📋 Changelog
+
+### v1.4 — Swiss Minimalist UI & MSI Installer
+- Redesigned the UI using the solid "Swiss Minimalist" design system.
+- Transitioned colors to deep black (`#101217`) and electric blue (`#2B6CEE`).
+- Replaced the standalone PyInstaller packaging with a clean MSI Windows Installer via cx_Freeze.
 
 ### v1.3 — UI Redesign (Premium Glassmorphism)
 - Complete UI overhaul using The Midnight Luminary design system
