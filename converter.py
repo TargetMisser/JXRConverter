@@ -16,6 +16,8 @@ from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+from translations import t
+
 logger = logging.getLogger(__name__)
 
 
@@ -182,11 +184,11 @@ class ConversionWorker(QThread):
                 if os.path.exists(output_path):
                     # Se il VERO png esiste già, questo finto jxr è un doppione buggato, eliminiamolo
                     os.remove(input_path)
-                    res_msg = "Eliminato finto .jxr (doppione buggato)"
+                    res_msg = t("conv_deleted_fake")
                 else:
                     # Altrimenti rinominiamo e sistemiamo i danni di NVIDIA
                     os.rename(input_path, output_path)
-                    res_msg = "Sistemato finto .jxr in automatico (era un PNG)"
+                    res_msg = t("conv_fixed_fake")
                     
                 result = ConversionResult(input_path, output_path, True, res_msg)
                 self.conversion_finished.emit(result)
@@ -199,7 +201,7 @@ class ConversionWorker(QThread):
         if os.path.exists(output_path):
             result = ConversionResult(
                 input_path, output_path, True,
-                "PNG già esistente, conversione saltata"
+                t("conv_already_exists")
             )
             self.conversion_finished.emit(result)
             return
@@ -214,7 +216,7 @@ class ConversionWorker(QThread):
         try:
             # Step 1: Decode
             if not os.path.isfile(jxr_path):
-                raise FileNotFoundError(f"jxr_to_png.exe non trovato in {jxr_path}")
+                raise FileNotFoundError(t("conv_error_jxr_not_found", path=jxr_path))
             
             p1 = subprocess.Popen(
                 [jxr_path, input_path, temp_png],
@@ -226,16 +228,16 @@ class ConversionWorker(QThread):
             if p1.returncode != 0:
                 os.remove(temp_png)
                 stderr_text = err1.decode('utf-8', errors='ignore').strip() or out1.decode('utf-8', errors='ignore').strip()
-                return ConversionResult(input_path, output_path, False, f"Errore jxr_to_png: {stderr_text if stderr_text else 'Exit code 1'}")
+                return ConversionResult(input_path, output_path, False, t("conv_error_jxr", detail=stderr_text if stderr_text else 'Exit code 1'))
             
             if self._stop_requested:
                 os.remove(temp_png)
-                return ConversionResult(input_path, output_path, False, "Interrotto")
+                return ConversionResult(input_path, output_path, False, t("conv_interrupted"))
                 
             # Step 2: Tonemap using hdrfix
             if not os.path.isfile(hdrfix_path):
                 os.remove(temp_png)
-                raise FileNotFoundError(f"hdrfix.exe non trovato in {hdrfix_path}")
+                raise FileNotFoundError(t("conv_error_hdrfix_not_found", path=hdrfix_path))
 
             p2 = subprocess.Popen(
                 [hdrfix_path, "--tone-map", "hable", "--saturation", "1.2", temp_png, output_path],
@@ -252,23 +254,23 @@ class ConversionWorker(QThread):
                 pass
                 
             if p2.returncode == 0:
-                result = ConversionResult(input_path, output_path, True, "Convertito e ottimizzato (SDR)")
+                result = ConversionResult(input_path, output_path, True, t("conv_success"))
             else:
                 stderr_text = err2.decode('utf-8', errors='ignore').strip()
                 result = ConversionResult(
                     input_path, output_path, False,
-                    f"Errore hdrfix: {stderr_text if stderr_text else 'Sconosciuto'}"
+                    t("conv_error_hdrfix", detail=stderr_text if stderr_text else '?')
                 )
 
         except FileNotFoundError as e:
             result = ConversionResult(
                 input_path, output_path, False,
-                f"Errore: {str(e)}"
+                t("conv_error_generic", detail=str(e))
             )
         except Exception as e:
             result = ConversionResult(
                 input_path, output_path, False,
-                f"Errore: {str(e)}"
+                t("conv_error_generic", detail=str(e))
             )
 
         self.conversion_finished.emit(result)

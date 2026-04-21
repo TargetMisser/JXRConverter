@@ -264,6 +264,61 @@ QMenu::separator {
     margin: 4px 8px;
 }
 
+/* ── ComboBox (Language Selector) ── */
+QComboBox {
+    background-color: #12122a;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 7px 12px;
+    color: #e2e8f0;
+    font-size: 13px;
+    min-height: 20px;
+}
+
+QComboBox:hover {
+    border: 1px solid #3a3a6a;
+}
+
+QComboBox:focus {
+    border: 1px solid #6366f1;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 28px;
+    border-left: 1px solid #2a2a4a;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    background-color: #1a1a2e;
+}
+
+QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+    image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238b8ba7' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    padding: 4px;
+    selection-background-color: rgba(99, 102, 241, 0.2);
+    selection-color: #e2e8f0;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    min-height: 24px;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: rgba(99, 102, 241, 0.12);
+}
+
 /* ── CheckBox ── */
 QCheckBox {
     spacing: 8px;

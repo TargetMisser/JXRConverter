@@ -5,7 +5,7 @@ The core of the project is - **[jxr_to_png](https://github.com/ledoge/jxr_to_png
 
 A desktop application that **automatically monitors** NVIDIA screenshot directories for HDR `.jxr` files and converts them to high-quality SDR `.png` format with professional tone mapping.
 
-Built with **PyQt5** — features a premium dark-mode UI, system tray integration, and multi-threaded parallel conversion.
+Built with **PyQt5** — features a premium dark-mode UI, system tray integration, multi-language support, and multi-threaded parallel conversion.
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python&logoColor=white)
 ![PyQt5](https://img.shields.io/badge/PyQt5-Desktop_App-green?logo=qt&logoColor=white)
@@ -18,12 +18,32 @@ Built with **PyQt5** — features a premium dark-mode UI, system tray integratio
 
 - **🔄 Automatic Monitoring** — Watches NVIDIA screenshot folders recursively via [Watchdog](https://github.com/gorakhargosh/watchdog), converting new `.jxr` files on the fly.
 - **🎨 Professional Tone Mapping** — Two-stage pipeline: HDR decode → Hable tone mapping with boosted saturation for vivid, social-media-ready colors.
+- **🌐 Multi-Language Support** — Available in 10 languages (IT, EN, ES, DE, FR, PT, JA, ZH, KO, RU) with automatic system language detection and in-app language selector.
 - **🤫 Customizable Background Mode** — Toggle between "Minimize to Tray" or "Close App" on window close.
 - **⚡ Parallel Conversion** — Multi-threaded processing (3 workers) for blazing fast batch conversions.
 - **🛡️ Smart File Detection** — Automatically detects and fixes fake `.jxr` files that are actually mislabeled PNGs (a known NVIDIA bug).
 - **🖥️ Premium Dark UI** — Glassmorphism-inspired interface with purple/blue accents, smooth animations, and a polished system tray experience.
 - **📦 Single Instance Guard** — Prevents multiple instances from running simultaneously.
 - **🔧 Persistent Configuration** — Settings stored in `%APPDATA%` for seamless operation even when installed in `C:\Program Files`.
+
+---
+
+## 🌐 Supported Languages
+
+| Language | Code | Flag |
+|----------|------|------|
+| Italiano | `it` | 🇮🇹 |
+| English | `en` | 🇬🇧 |
+| Español | `es` | 🇪🇸 |
+| Deutsch | `de` | 🇩🇪 |
+| Français | `fr` | 🇫🇷 |
+| Português | `pt` | 🇧🇷 |
+| 日本語 | `ja` | 🇯🇵 |
+| 中文 | `zh` | 🇨🇳 |
+| 한국어 | `ko` | 🇰🇷 |
+| Русский | `ru` | 🇷🇺 |
+
+The app automatically detects your system language on first launch. You can change the language at any time from the in-app selector — it switches instantly without restart.
 
 ---
 
@@ -96,6 +116,7 @@ On first launch, configure:
 
 - **Watch Folder**: The NVIDIA screenshot directory to monitor (default: `C:\Users\<you>\Videos\NVIDIA`)
 - **Tool Path**: Path to the folder containing `jxr_to_png.exe` and `hdrfix.exe`
+- **Language**: Auto-detected from your system, or pick manually from the dropdown
 
 Settings are persisted in `%APPDATA%\JXRConverter\config.json`.
 
@@ -106,8 +127,9 @@ Settings are persisted in `%APPDATA%\JXRConverter\config.json`.
 ```
 JXRConverter/
 ├── main.py              # Entry point, single-instance guard, High-DPI
-├── ui.py                # PyQt5 GUI (dark mode, system tray, config)
+├── ui.py                # PyQt5 GUI (dark mode, system tray, config, i18n)
 ├── converter.py         # Watchdog + ThreadPool conversion engine
+├── translations.py      # Multi-language i18n system (10 languages)
 ├── styles.py            # QSS stylesheet (glassmorphism dark theme)
 ├── resources.py         # Inline SVG icons for window and tray
 ├── requirements.txt     # Python dependencies
@@ -150,3 +172,21 @@ Note: The external tools (`jxr_to_png.exe`, `hdrfix.exe`) are **not included** i
 - NVIDIA occasionally saves screenshots with a `.jxr` extension that are actually PNG files internally. The app automatically detects and handles this case.
 - The Hable tone mapping with `+20%` saturation is tuned to counteract the color desaturation that occurs when sharing images on platforms like Telegram and WhatsApp.
 - `jxr_to_png.exe` already uses multi-threading internally (6 threads for decoding), so the app limits parallel workers to 3 to avoid CPU saturation.
+
+---
+
+## 📋 Changelog
+
+### v1.2 — Multi-Language Support
+- Added internationalization (i18n) with support for 10 languages
+- Auto-detects system language on first launch
+- In-app language selector with instant switching (no restart needed)
+- New styled QComboBox for language selection
+
+### v1.1 — Tray Toggle
+- Added toggle for minimize-to-tray vs close behavior
+
+### v1.0 — Initial Release
+- Automatic HDR screenshot monitoring and conversion
+- Two-stage conversion pipeline with Hable tone mapping
+- Premium dark-mode UI with system tray integration

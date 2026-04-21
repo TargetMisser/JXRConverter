@@ -43,10 +43,11 @@ def main():
         _lock_socket.bind(('127.0.0.1', 47291))
     except socket.error:
         from PyQt5.QtWidgets import QMessageBox
+        from translations import t
         QMessageBox.warning(
             None,
-            "JXR → PNG Converter",
-            "L'applicazione è già in esecuzione nella system tray."
+            t("already_running_title"),
+            t("already_running_msg")
         )
         sys.exit(0)
 

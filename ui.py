@@ -1,6 +1,6 @@
 """
 Main window and system tray for the JXR → PNG Converter app.
-Premium dark-mode PyQt5 interface.
+Premium dark-mode PyQt5 interface with multi-language support.
 """
 
 import json
@@ -13,7 +13,8 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QLineEdit, QListWidget, QListWidgetItem, QFrame,
     QFileDialog, QSystemTrayIcon, QMenu, QAction, QApplication,
-    QSizePolicy, QGraphicsOpacityEffect, QMessageBox, QSpacerItem, QCheckBox
+    QSizePolicy, QGraphicsOpacityEffect, QMessageBox, QSpacerItem, QCheckBox,
+    QComboBox
 )
 from PyQt5.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, pyqtSlot
@@ -25,6 +26,10 @@ from resources import get_app_icon, get_tray_icon_active, get_tray_icon_idle
 from converter import (
     FileWatcherThread, ConversionWorker, ConversionResult,
     find_unconverted_jxr_files
+)
+from translations import (
+    t, set_language, get_language, detect_system_language,
+    LANGUAGES, TRANSLATIONS
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +57,7 @@ DEFAULT_CONFIG = {
     "start_minimized": False,
     "auto_start_monitoring": True,
     "minimize_to_tray": True,
+    "language": "",  # empty = auto-detect system language
 }
 
 
@@ -92,6 +98,16 @@ class MainWindow(QMainWindow):
         self.watcher_thread = None
         self.converter_thread = None
 
+        # Initialize language from config or system
+        saved_lang = self.config.get("language", "")
+        if saved_lang and saved_lang in TRANSLATIONS:
+            set_language(saved_lang)
+        else:
+            detected = detect_system_language()
+            set_language(detected)
+            self.config["language"] = detected
+            save_config(self.config)
+
         self._setup_ui()
         self._setup_tray()
         self._connect_signals()
@@ -102,10 +118,10 @@ class MainWindow(QMainWindow):
 
     def _setup_ui(self):
         """Build the main UI."""
-        self.setWindowTitle("JXR → PNG Converter")
+        self.setWindowTitle(t("window_title"))
         self.setWindowIcon(get_app_icon())
-        self.setMinimumSize(620, 700)
-        self.resize(660, 780)
+        self.setMinimumSize(620, 740)
+        self.resize(660, 820)
         self.setStyleSheet(DARK_STYLESHEET)
 
         central = QWidget()
@@ -120,19 +136,19 @@ class MainWindow(QMainWindow):
         header_layout = QVBoxLayout()
         header_layout.setSpacing(2)
 
-        title = QLabel("⚡ JXR → PNG Converter")
-        title.setObjectName("titleLabel")
-        header_layout.addWidget(title)
+        self.title_label = QLabel(t("header_title"))
+        self.title_label.setObjectName("titleLabel")
+        header_layout.addWidget(self.title_label)
 
-        subtitle = QLabel("Conversione automatica screenshot HDR NVIDIA")
-        subtitle.setObjectName("subtitleLabel")
-        header_layout.addWidget(subtitle)
+        self.subtitle_label = QLabel(t("header_subtitle"))
+        self.subtitle_label.setObjectName("subtitleLabel")
+        header_layout.addWidget(self.subtitle_label)
 
         main_layout.addLayout(header_layout)
 
         # ── Status bar ──
         status_row = QHBoxLayout()
-        self.status_label = QLabel("⏸  Inattivo")
+        self.status_label = QLabel(t("status_inactive"))
         self.status_label.setObjectName("statusInactive")
         self.status_label.setFixedHeight(34)
         status_row.addWidget(self.status_label)
@@ -150,47 +166,73 @@ class MainWindow(QMainWindow):
         config_layout = QVBoxLayout(config_card)
         config_layout.setSpacing(10)
 
-        config_title = QLabel("⚙  Configurazione")
-        config_title.setObjectName("sectionTitle")
-        config_layout.addWidget(config_title)
+        self.config_title_label = QLabel(t("config_title"))
+        self.config_title_label.setObjectName("sectionTitle")
+        config_layout.addWidget(self.config_title_label)
 
         # Watch folder
-        watch_label = QLabel("Cartella monitorata")
-        watch_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
-        config_layout.addWidget(watch_label)
+        self.watch_label = QLabel(t("watch_folder_label"))
+        self.watch_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
+        config_layout.addWidget(self.watch_label)
 
         watch_row = QHBoxLayout()
         self.watch_input = QLineEdit(self.config.get("watch_path", ""))
-        self.watch_input.setPlaceholderText("Seleziona la cartella da monitorare...")
+        self.watch_input.setPlaceholderText(t("watch_folder_placeholder"))
         watch_row.addWidget(self.watch_input)
 
-        watch_browse = QPushButton("📁")
-        watch_browse.setObjectName("browseBtn")
-        watch_browse.setToolTip("Sfoglia...")
-        watch_browse.clicked.connect(self._browse_watch_folder)
-        watch_row.addWidget(watch_browse)
+        self.watch_browse_btn = QPushButton("📁")
+        self.watch_browse_btn.setObjectName("browseBtn")
+        self.watch_browse_btn.setToolTip(t("browse_tooltip"))
+        self.watch_browse_btn.clicked.connect(self._browse_watch_folder)
+        watch_row.addWidget(self.watch_browse_btn)
         config_layout.addLayout(watch_row)
 
         # hdrfix.exe path
-        exe_label = QLabel("Percorso hdrfix.exe")
-        exe_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
-        config_layout.addWidget(exe_label)
+        self.exe_label = QLabel(t("exe_path_label"))
+        self.exe_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
+        config_layout.addWidget(self.exe_label)
 
         exe_row = QHBoxLayout()
         self.exe_input = QLineEdit(self.config.get("jxr_exe_path", ""))
-        self.exe_input.setPlaceholderText("Seleziona hdrfix.exe...")
+        self.exe_input.setPlaceholderText(t("exe_path_placeholder"))
         exe_row.addWidget(self.exe_input)
 
-        exe_browse = QPushButton("📁")
-        exe_browse.clicked.connect(self._browse_exe)
-        exe_row.addWidget(exe_browse)
+        self.exe_browse_btn = QPushButton("📁")
+        self.exe_browse_btn.clicked.connect(self._browse_exe)
+        exe_row.addWidget(self.exe_browse_btn)
         config_layout.addLayout(exe_row)
 
         # Minimize to tray toggle
-        self.tray_checkbox = QCheckBox("Riduci a icona nella Tray invece di chiudere")
+        self.tray_checkbox = QCheckBox(t("tray_checkbox"))
         self.tray_checkbox.setChecked(self.config.get("minimize_to_tray", True))
         self.tray_checkbox.setCursor(Qt.PointingHandCursor)
         config_layout.addWidget(self.tray_checkbox)
+
+        # ── Language selector ──
+        lang_row = QHBoxLayout()
+        self.lang_label = QLabel(t("language_label"))
+        self.lang_label.setStyleSheet("color: #8b8ba7; font-size: 11px;")
+        lang_row.addWidget(self.lang_label)
+
+        self.lang_combo = QComboBox()
+        self.lang_combo.setObjectName("langCombo")
+        self.lang_combo.setCursor(Qt.PointingHandCursor)
+        # Populate with flag + language name
+        lang_flags = {
+            "it": "🇮🇹", "en": "🇬🇧", "es": "🇪🇸", "de": "🇩🇪", "fr": "🇫🇷",
+            "pt": "🇧🇷", "ja": "🇯🇵", "zh": "🇨🇳", "ko": "🇰🇷", "ru": "🇷🇺",
+        }
+        current_lang = get_language()
+        current_index = 0
+        for i, (code, name) in enumerate(LANGUAGES.items()):
+            flag = lang_flags.get(code, "🌐")
+            self.lang_combo.addItem(f"{flag}  {name}", code)
+            if code == current_lang:
+                current_index = i
+        self.lang_combo.setCurrentIndex(current_index)
+        self.lang_combo.currentIndexChanged.connect(self._on_language_changed)
+        lang_row.addWidget(self.lang_combo, stretch=1)
+        config_layout.addLayout(lang_row)
 
         main_layout.addWidget(config_card)
 
@@ -198,16 +240,16 @@ class MainWindow(QMainWindow):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(10)
 
-        self.toggle_btn = QPushButton("▶  Avvia Monitoraggio")
+        self.toggle_btn = QPushButton(t("start_monitoring"))
         self.toggle_btn.setObjectName("primaryBtn")
         self.toggle_btn.setCursor(Qt.PointingHandCursor)
         self.toggle_btn.clicked.connect(self.toggle_monitoring)
         btn_row.addWidget(self.toggle_btn)
 
-        self.convert_all_btn = QPushButton("🔄  Converti Esistenti")
+        self.convert_all_btn = QPushButton(t("convert_existing"))
         self.convert_all_btn.setObjectName("secondaryBtn")
         self.convert_all_btn.setCursor(Qt.PointingHandCursor)
-        self.convert_all_btn.setToolTip("Converti tutti i .jxr che non hanno ancora un .png")
+        self.convert_all_btn.setToolTip(t("convert_existing_tooltip"))
         self.convert_all_btn.clicked.connect(self._convert_existing)
         btn_row.addWidget(self.convert_all_btn)
 
@@ -226,10 +268,10 @@ class MainWindow(QMainWindow):
         self.stat_converted.setObjectName("statValue")
         self.stat_converted.setAlignment(Qt.AlignCenter)
         conv_col.addWidget(self.stat_converted)
-        conv_label = QLabel("CONVERTITI")
-        conv_label.setObjectName("statLabel")
-        conv_label.setAlignment(Qt.AlignCenter)
-        conv_col.addWidget(conv_label)
+        self.conv_stat_label = QLabel(t("stat_converted"))
+        self.conv_stat_label.setObjectName("statLabel")
+        self.conv_stat_label.setAlignment(Qt.AlignCenter)
+        conv_col.addWidget(self.conv_stat_label)
         stats_layout.addLayout(conv_col)
 
         # Separator
@@ -245,10 +287,10 @@ class MainWindow(QMainWindow):
         self.stat_errors.setObjectName("statValue")
         self.stat_errors.setAlignment(Qt.AlignCenter)
         err_col.addWidget(self.stat_errors)
-        err_label = QLabel("ERRORI")
-        err_label.setObjectName("statLabel")
-        err_label.setAlignment(Qt.AlignCenter)
-        err_col.addWidget(err_label)
+        self.err_stat_label = QLabel(t("stat_errors"))
+        self.err_stat_label.setObjectName("statLabel")
+        self.err_stat_label.setAlignment(Qt.AlignCenter)
+        err_col.addWidget(self.err_stat_label)
         stats_layout.addLayout(err_col)
 
         # Separator
@@ -266,10 +308,10 @@ class MainWindow(QMainWindow):
         self.stat_last_file.setAlignment(Qt.AlignCenter)
         self.stat_last_file.setWordWrap(True)
         last_col.addWidget(self.stat_last_file)
-        last_label = QLabel("ULTIMO FILE")
-        last_label.setObjectName("statLabel")
-        last_label.setAlignment(Qt.AlignCenter)
-        last_col.addWidget(last_label)
+        self.last_stat_label = QLabel(t("stat_last_file"))
+        self.last_stat_label.setObjectName("statLabel")
+        self.last_stat_label.setAlignment(Qt.AlignCenter)
+        last_col.addWidget(self.last_stat_label)
         stats_layout.addLayout(last_col)
 
         main_layout.addWidget(stats_card)
@@ -280,17 +322,17 @@ class MainWindow(QMainWindow):
         log_layout = QVBoxLayout(log_card)
 
         log_header = QHBoxLayout()
-        log_title = QLabel("📋  Log Conversioni")
-        log_title.setObjectName("sectionTitle")
-        log_header.addWidget(log_title)
+        self.log_title_label = QLabel(t("log_title"))
+        self.log_title_label.setObjectName("sectionTitle")
+        log_header.addWidget(self.log_title_label)
         log_header.addStretch()
 
-        clear_btn = QPushButton("Pulisci")
-        clear_btn.setObjectName("secondaryBtn")
-        clear_btn.setFixedHeight(28)
-        clear_btn.setCursor(Qt.PointingHandCursor)
-        clear_btn.clicked.connect(self._clear_log)
-        log_header.addWidget(clear_btn)
+        self.clear_btn = QPushButton(t("clear_btn"))
+        self.clear_btn.setObjectName("secondaryBtn")
+        self.clear_btn.setFixedHeight(28)
+        self.clear_btn.setCursor(Qt.PointingHandCursor)
+        self.clear_btn.clicked.connect(self._clear_log)
+        log_header.addWidget(self.clear_btn)
         log_layout.addLayout(log_header)
 
         self.log_list = QListWidget()
@@ -304,28 +346,28 @@ class MainWindow(QMainWindow):
         """Set up system tray icon and menu."""
         self.tray_icon = QSystemTrayIcon(get_tray_icon_idle(), self)
 
-        tray_menu = QMenu()
-        tray_menu.setStyleSheet(DARK_STYLESHEET)
+        self.tray_menu = QMenu()
+        self.tray_menu.setStyleSheet(DARK_STYLESHEET)
 
-        self.tray_toggle_action = QAction("▶ Avvia Monitoraggio", self)
+        self.tray_toggle_action = QAction(t("tray_start"), self)
         self.tray_toggle_action.triggered.connect(self.toggle_monitoring)
-        tray_menu.addAction(self.tray_toggle_action)
+        self.tray_menu.addAction(self.tray_toggle_action)
 
-        tray_menu.addSeparator()
+        self.tray_menu.addSeparator()
 
-        show_action = QAction("🔲 Mostra Finestra", self)
-        show_action.triggered.connect(self._show_window)
-        tray_menu.addAction(show_action)
+        self.tray_show_action = QAction(t("tray_show"), self)
+        self.tray_show_action.triggered.connect(self._show_window)
+        self.tray_menu.addAction(self.tray_show_action)
 
-        tray_menu.addSeparator()
+        self.tray_menu.addSeparator()
 
-        quit_action = QAction("✖ Esci", self)
-        quit_action.triggered.connect(self._quit_app)
-        tray_menu.addAction(quit_action)
+        self.tray_quit_action = QAction(t("tray_quit"), self)
+        self.tray_quit_action.triggered.connect(self._quit_app)
+        self.tray_menu.addAction(self.tray_quit_action)
 
-        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.setContextMenu(self.tray_menu)
         self.tray_icon.activated.connect(self._tray_activated)
-        self.tray_icon.setToolTip("JXR → PNG Converter")
+        self.tray_icon.setToolTip(t("tray_tooltip_idle"))
         self.tray_icon.show()
 
     def _connect_signals(self):
@@ -333,6 +375,69 @@ class MainWindow(QMainWindow):
         self.watch_input.textChanged.connect(self._on_config_changed)
         self.exe_input.textChanged.connect(self._on_config_changed)
         self.tray_checkbox.stateChanged.connect(self._on_config_changed)
+
+    # ── Language ──
+
+    def _on_language_changed(self, index):
+        """Handle language selector change."""
+        lang_code = self.lang_combo.itemData(index)
+        if lang_code and lang_code != get_language():
+            set_language(lang_code)
+            self.config["language"] = lang_code
+            save_config(self.config)
+            self._refresh_all_text()
+
+    def _refresh_all_text(self):
+        """Refresh all visible text after a language change."""
+        # Window title
+        self.setWindowTitle(t("window_title"))
+
+        # Header
+        self.title_label.setText(t("header_title"))
+        self.subtitle_label.setText(t("header_subtitle"))
+
+        # Status
+        if self.is_monitoring:
+            self.status_label.setText(t("status_active"))
+        else:
+            self.status_label.setText(t("status_inactive"))
+
+        # Config section
+        self.config_title_label.setText(t("config_title"))
+        self.watch_label.setText(t("watch_folder_label"))
+        self.watch_input.setPlaceholderText(t("watch_folder_placeholder"))
+        self.watch_browse_btn.setToolTip(t("browse_tooltip"))
+        self.exe_label.setText(t("exe_path_label"))
+        self.exe_input.setPlaceholderText(t("exe_path_placeholder"))
+        self.tray_checkbox.setText(t("tray_checkbox"))
+        self.lang_label.setText(t("language_label"))
+
+        # Action buttons
+        if self.is_monitoring:
+            self.toggle_btn.setText(t("stop_monitoring"))
+        else:
+            self.toggle_btn.setText(t("start_monitoring"))
+        self.convert_all_btn.setText(t("convert_existing"))
+        self.convert_all_btn.setToolTip(t("convert_existing_tooltip"))
+
+        # Stats labels
+        self.conv_stat_label.setText(t("stat_converted"))
+        self.err_stat_label.setText(t("stat_errors"))
+        self.last_stat_label.setText(t("stat_last_file"))
+
+        # Log
+        self.log_title_label.setText(t("log_title"))
+        self.clear_btn.setText(t("clear_btn"))
+
+        # Tray menu
+        if self.is_monitoring:
+            self.tray_toggle_action.setText(t("tray_stop"))
+            self.tray_icon.setToolTip(t("tray_tooltip_active"))
+        else:
+            self.tray_toggle_action.setText(t("tray_start"))
+            self.tray_icon.setToolTip(t("tray_tooltip_idle"))
+        self.tray_show_action.setText(t("tray_show"))
+        self.tray_quit_action.setText(t("tray_quit"))
 
     # ── Monitoring Control ──
 
@@ -349,11 +454,11 @@ class MainWindow(QMainWindow):
 
         # Validate paths
         if not watch_path or not os.path.isdir(watch_path):
-            self._log_message("❌ Cartella monitorata non valida", error=True)
+            self._log_message(t("error_watch_invalid"), error=True)
             return
 
         if not exe_path or not os.path.isfile(exe_path):
-            self._log_message("❌ hdrfix.exe non trovato", error=True)
+            self._log_message(t("error_exe_not_found"), error=True)
             return
 
         # Start watcher thread
@@ -371,7 +476,7 @@ class MainWindow(QMainWindow):
 
         self.is_monitoring = True
         self._update_ui_state()
-        self._log_message(f"✅ Monitoraggio avviato: {watch_path}")
+        self._log_message(t("monitoring_started", path=watch_path))
 
     def stop_monitoring(self):
         """Stop watching."""
@@ -387,28 +492,28 @@ class MainWindow(QMainWindow):
 
         self.is_monitoring = False
         self._update_ui_state()
-        self._log_message("⏸ Monitoraggio fermato")
+        self._log_message(t("monitoring_stopped"))
 
     def _update_ui_state(self):
         """Update UI elements based on monitoring state."""
         if self.is_monitoring:
-            self.toggle_btn.setText("⏹  Ferma Monitoraggio")
+            self.toggle_btn.setText(t("stop_monitoring"))
             self.toggle_btn.setObjectName("stopBtn")
-            self.status_label.setText("🟢  Monitoraggio attivo")
+            self.status_label.setText(t("status_active"))
             self.status_label.setObjectName("statusActive")
-            self.tray_toggle_action.setText("⏹ Ferma Monitoraggio")
+            self.tray_toggle_action.setText(t("tray_stop"))
             self.tray_icon.setIcon(get_tray_icon_active())
-            self.tray_icon.setToolTip("JXR → PNG Converter - Monitoraggio attivo")
+            self.tray_icon.setToolTip(t("tray_tooltip_active"))
             self.watch_input.setEnabled(False)
             self.exe_input.setEnabled(False)
         else:
-            self.toggle_btn.setText("▶  Avvia Monitoraggio")
+            self.toggle_btn.setText(t("start_monitoring"))
             self.toggle_btn.setObjectName("primaryBtn")
-            self.status_label.setText("⏸  Inattivo")
+            self.status_label.setText(t("status_inactive"))
             self.status_label.setObjectName("statusInactive")
-            self.tray_toggle_action.setText("▶ Avvia Monitoraggio")
+            self.tray_toggle_action.setText(t("tray_start"))
             self.tray_icon.setIcon(get_tray_icon_idle())
-            self.tray_icon.setToolTip("JXR → PNG Converter - Inattivo")
+            self.tray_icon.setToolTip(t("tray_tooltip_idle"))
             self.watch_input.setEnabled(True)
             self.exe_input.setEnabled(True)
 
@@ -430,7 +535,7 @@ class MainWindow(QMainWindow):
     def _on_conversion_started(self, file_path: str):
         """When conversion begins."""
         name = Path(file_path).name
-        self._log_message(f"⏳ Conversione in corso: {name}")
+        self._log_message(t("converting", name=name))
 
     @pyqtSlot(object)
     def _on_conversion_finished(self, result: ConversionResult):
@@ -445,8 +550,8 @@ class MainWindow(QMainWindow):
             # Show tray notification
             if not self.isVisible() or self.isMinimized():
                 self.tray_icon.showMessage(
-                    "Conversione completata",
-                    f"{name} convertito in PNG",
+                    t("tray_conversion_done"),
+                    t("tray_conversion_msg", name=name),
                     QSystemTrayIcon.Information, 2000
                 )
         else:
@@ -458,7 +563,7 @@ class MainWindow(QMainWindow):
     def _on_queue_changed(self, size: int):
         """Update queue size display."""
         if size > 0:
-            self.queue_label.setText(f"In coda: {size}")
+            self.queue_label.setText(t("queue_label", size=size))
         else:
             self.queue_label.setText("")
 
@@ -466,7 +571,7 @@ class MainWindow(QMainWindow):
 
     def _browse_watch_folder(self):
         folder = QFileDialog.getExistingDirectory(
-            self, "Seleziona cartella da monitorare",
+            self, t("browse_watch_dialog"),
             self.watch_input.text() or r"C:\Users\turni\Videos"
         )
         if folder:
@@ -474,9 +579,9 @@ class MainWindow(QMainWindow):
 
     def _browse_exe(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Seleziona hdrfix.exe",
+            self, t("browse_exe_dialog"),
             self.exe_input.text() or r"C:\Users\turni\Videos",
-            "Eseguibili (*.exe)"
+            t("browse_exe_filter")
         )
         if file_path:
             self.exe_input.setText(file_path)
@@ -487,20 +592,20 @@ class MainWindow(QMainWindow):
         exe_path = self.exe_input.text().strip()
 
         if not watch_path or not os.path.isdir(watch_path):
-            self._log_message("❌ Cartella monitorata non valida", error=True)
+            self._log_message(t("error_watch_invalid"), error=True)
             return
 
         if not exe_path or not os.path.isfile(exe_path):
-            self._log_message("❌ jxr_to_png.exe non trovato", error=True)
+            self._log_message(t("error_jxr_exe_not_found"), error=True)
             return
 
         unconverted = find_unconverted_jxr_files(watch_path)
 
         if not unconverted:
-            self._log_message("ℹ️  Nessun file .jxr da convertire trovato")
+            self._log_message(t("no_files_to_convert"))
             return
 
-        self._log_message(f"🔄 Trovati {len(unconverted)} file .jxr da convertire")
+        self._log_message(t("files_found", count=len(unconverted)))
 
         # Ensure converter is running
         if not self.converter_thread or not self.converter_thread.isRunning():
@@ -570,8 +675,8 @@ class MainWindow(QMainWindow):
             event.ignore()
             self.hide()
             self.tray_icon.showMessage(
-                "JXR → PNG Converter",
-                "L'app continua in background nella system tray.",
+                t("tray_minimized_title"),
+                t("tray_minimized_msg"),
                 QSystemTrayIcon.Information, 2000
             )
         else:
