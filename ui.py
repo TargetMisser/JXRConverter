@@ -544,7 +544,7 @@ class MainWindow(QMainWindow):
         if result.success:
             self.conversion_count += 1
             self.stat_converted.setText(str(self.conversion_count))
-            self.stat_last_file.setText(name.replace('.jxr', '.png'))
+            self.stat_last_file.setText(Path(result.output_path).name)
             self._log_message(f"✅ {name} → {result.message}")
 
             # Show tray notification

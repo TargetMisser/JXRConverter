@@ -176,6 +176,11 @@ Note: The external tools (`jxr_to_png.exe`, `hdrfix.exe`) are **not included** i
 
 ## 📋 Changelog
 
+### v1.5 — AMD HDR PNG Support
+- Added native monitoring and in-place conversion support for AMD Software HDR PNG screenshots (and generic PQ/HLG HDR PNGs).
+- Implemented a pure-Python high-performance PNG chunk parser to safely detect HDR profiles (cICP/iCCP/16-bit depth) without external dependencies.
+- Updated user interface logs and translations (IT & EN) to represent multi-source HDR inputs.
+
 ### v1.4 — Swiss Minimalist UI & MSI Installer
 - Redesigned the UI using the solid "Swiss Minimalist" design system.
 - Transitioned colors to deep black (`#101217`) and electric blue (`#2B6CEE`).
