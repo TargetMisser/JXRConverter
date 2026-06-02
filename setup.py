@@ -6,7 +6,7 @@ from cx_Freeze import setup, Executable
 sys.setrecursionlimit(5000)
 
 app_name = "JXRConverter"
-version = "1.5"
+version = "1.5.1"
 description = "JXR to PNG Auto-Converter"
 
 # Build options

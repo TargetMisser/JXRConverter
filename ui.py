@@ -164,7 +164,8 @@ class MainWindow(QMainWindow):
         config_card = QFrame()
         config_card.setObjectName("configCard")
         config_layout = QVBoxLayout(config_card)
-        config_layout.setSpacing(10)
+        config_layout.setContentsMargins(20, 20, 20, 20)
+        config_layout.setSpacing(12)
 
         self.config_title_label = QLabel(t("config_title"))
         self.config_title_label.setObjectName("sectionTitle")
@@ -198,6 +199,8 @@ class MainWindow(QMainWindow):
         exe_row.addWidget(self.exe_input)
 
         self.exe_browse_btn = QPushButton("📁")
+        self.exe_browse_btn.setObjectName("browseBtn")
+        self.exe_browse_btn.setToolTip(t("browse_tooltip"))
         self.exe_browse_btn.clicked.connect(self._browse_exe)
         exe_row.addWidget(self.exe_browse_btn)
         config_layout.addLayout(exe_row)
@@ -259,6 +262,7 @@ class MainWindow(QMainWindow):
         stats_card = QFrame()
         stats_card.setObjectName("statsCard")
         stats_layout = QHBoxLayout(stats_card)
+        stats_layout.setContentsMargins(20, 16, 20, 16)
         stats_layout.setSpacing(20)
 
         # Conversions count
@@ -320,6 +324,7 @@ class MainWindow(QMainWindow):
         log_card = QFrame()
         log_card.setObjectName("logCard")
         log_layout = QVBoxLayout(log_card)
+        log_layout.setContentsMargins(20, 20, 20, 20)
 
         log_header = QHBoxLayout()
         self.log_title_label = QLabel(t("log_title"))

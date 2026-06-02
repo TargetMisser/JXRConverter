@@ -24,13 +24,17 @@ logger = logging.getLogger(__name__)
 def is_hdr_png(file_path: str) -> bool:
     """
     Check if a PNG file contains HDR metadata (e.g. cICP chunk with PQ/HLG, 
-    iCCP chunk with HDR color space name, or is 16-bit depth).
+    iCCP chunk with HDR color space name, or is 16-bit depth),
+    or is an AMD Radeon washed-out HDR screenshot.
     """
     if not file_path.lower().endswith('.png'):
         return False
     try:
         if not os.path.exists(file_path):
             return False
+            
+        # First, read chunks to see if it's already processed, or has standard HDR headers
+        is_processed = False
         with open(file_path, 'rb') as f:
             sig = f.read(8)
             if sig != b'\x89PNG\r\n\x1a\n':
@@ -69,11 +73,37 @@ def is_hdr_png(file_path: str) -> bool:
                         if any(x in profile_name for x in ('hdr', 'bt.2020', 'bt.2100', 'rec.2020', 'pq', 'hlg')):
                             return True
                     f.read(4) # skip CRC
+                elif chunk_type == b'tEXt':
+                    text_data = f.read(length)
+                    if b'JXRConverter' in text_data:
+                        is_processed = True
+                    f.read(4) # skip CRC
                 elif chunk_type == b'IEND':
                     break
                 else:
                     # Skip chunk data and CRC
                     f.seek(length + 4, os.SEEK_CUR)
+                    
+        if is_processed:
+            return False
+            
+        # If the file is in an AMD Radeon folder, check if it's a washed-out screenshot
+        normalized_path = file_path.replace('\\', '/').lower()
+        if 'radeon' in normalized_path or 'relive' in normalized_path:
+            from PIL import Image
+            try:
+                with Image.open(file_path) as im:
+                    # Convert to HSV on a resized thumbnail to quickly check saturation
+                    im_small = im.resize((64, 64)).convert('HSV')
+                    h, s, v = im_small.split()
+                    s_data = list(s.get_flattened_data() if hasattr(s, 'get_flattened_data') else s.getdata())
+                    avg_s = sum(s_data) / len(s_data)
+                    # Average saturation < 38 represents a desaturated washed-out HDR capture
+                    if avg_s < 38:
+                        return True
+            except Exception as e:
+                logger.warning(f"Error analyzing image saturation for {file_path}: {e}")
+                
     except Exception as e:
         logger.error(f"Error checking PNG HDR metadata for {file_path}: {e}")
     return False
@@ -289,16 +319,43 @@ class ConversionWorker(QThread):
                     os.remove(temp_png)
                     raise FileNotFoundError(t("conv_error_hdrfix_not_found", path=hdrfix_path))
                 
+                # Check if it needs RGB conversion first (e.g. if it is RGBA/color type 6)
+                temp_rgb = None
+                from PIL import Image
+                try:
+                    with Image.open(input_path) as im:
+                        if im.mode != 'RGB':
+                            fd_rgb, temp_rgb = tempfile.mkstemp(suffix=".png")
+                            os.close(fd_rgb)
+                            im.convert('RGB').save(temp_rgb)
+                except Exception as e:
+                    logger.warning(f"Could not convert input PNG to RGB: {e}")
+                
+                input_for_hdrfix = temp_rgb if temp_rgb else input_path
+                
                 p2 = subprocess.Popen(
-                    [hdrfix_path, "--tone-map", "hable", "--saturation", "1.2", input_path, temp_png],
+                    [hdrfix_path, "--tone-map", "hable", "--saturation", "1.2", input_for_hdrfix, temp_png],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     creationflags=subprocess.CREATE_NO_WINDOW
                 )
                 out2, err2 = p2.communicate(timeout=60)
                 
+                if temp_rgb:
+                    try:
+                        os.remove(temp_rgb)
+                    except:
+                        pass
+                
                 if p2.returncode == 0:
                     try:
+                        # Write metadata tag to indicate it has been processed
+                        from PIL import Image, PngImagePlugin
+                        with Image.open(temp_png) as im:
+                            meta = PngImagePlugin.PngInfo()
+                            meta.add_text("JXRConverter", "v1.5")
+                            im.save(temp_png, pnginfo=meta)
+                            
                         if os.path.exists(input_path):
                             os.remove(input_path)
                         os.rename(temp_png, input_path)
@@ -308,7 +365,7 @@ class ConversionWorker(QThread):
                             os.remove(temp_png)
                         except:
                             pass
-                        result = ConversionResult(input_path, input_path, False, t("conv_error_generic", detail=f"Failed to replace original file: {e}"))
+                        result = ConversionResult(input_path, input_path, False, t("conv_error_generic", detail=f"Failed to replace/tag file: {e}"))
                 else:
                     try:
                         os.remove(temp_png)

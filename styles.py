@@ -24,7 +24,6 @@ QFrame#configCard, QFrame#logCard, QFrame#statsCard {
     background-color: #1A1D23;
     border: 1px solid #2A2F3A;
     border-radius: 12px;
-    padding: 24px;
 }
 
 QFrame#configCard:hover, QFrame#logCard:hover, QFrame#statsCard:hover {
@@ -35,6 +34,8 @@ QFrame#configCard:hover, QFrame#logCard:hover, QFrame#statsCard:hover {
 QLabel {
     background: transparent;
     border: none;
+    padding: 0px;
+    margin: 0px;
 }
 
 QLabel#titleLabel {
@@ -97,9 +98,10 @@ QLineEdit {
     background-color: #101217;
     border: 1px solid #2A2F3A;
     border-radius: 8px;
-    padding: 10px 14px;
+    padding: 6px 14px;
     color: #ffffff;
     selection-background-color: #2B6CEE;
+    min-height: 38px;
 }
 
 QLineEdit:focus {
@@ -118,6 +120,7 @@ QPushButton {
     padding: 10px 20px;
     font-weight: 600;
     font-size: 14px;
+    min-height: 38px;
 }
 
 QPushButton#primaryBtn {
@@ -156,8 +159,13 @@ QPushButton#browseBtn {
     background-color: rgba(43, 108, 238, 0.1);
     color: #2B6CEE;
     border: 1px solid rgba(43, 108, 238, 0.3);
-    padding: 8px 16px;
+    padding: 8px 12px;
     border-radius: 8px;
+    min-width: 44px;
+    max-width: 44px;
+    min-height: 38px;
+    max-height: 38px;
+    font-size: 16px;
 }
 
 QPushButton#browseBtn:hover {
@@ -277,7 +285,7 @@ QComboBox {
     padding: 8px 14px;
     color: #ffffff;
     font-size: 13px;
-    min-height: 20px;
+    min-height: 38px;
 }
 
 QComboBox:hover {

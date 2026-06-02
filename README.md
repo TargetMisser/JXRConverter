@@ -176,6 +176,13 @@ Note: The external tools (`jxr_to_png.exe`, `hdrfix.exe`) are **not included** i
 
 ## 📋 Changelog
 
+### v1.5.1 — UI Scaling Fixes & Robust AMD Detection
+- Fixed UI layout bugs that caused overlapping text/inputs on different display scales.
+- Assigned correct QSS objectName to the executable browse button.
+- Added smart saturation-based and path-based detection for standard 8-bit AMD HDR screenshots.
+- Implemented automatic input conversion from RGBA to RGB to satisfy `hdrfix` requirements.
+- Implemented custom PNG `tEXt` metadata tagging to prevent duplicate processing loops.
+
 ### v1.5 — AMD HDR PNG Support
 - Added native monitoring and in-place conversion support for AMD Software HDR PNG screenshots (and generic PQ/HLG HDR PNGs).
 - Implemented a pure-Python high-performance PNG chunk parser to safely detect HDR profiles (cICP/iCCP/16-bit depth) without external dependencies.
